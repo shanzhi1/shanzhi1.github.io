@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="">
+  <meta name="author" content="shanzhi7">
+  <meta name="keywords" content="">
+  
+  <title>Nginx_proxy_next_upstream引发的服务不可用 - shanzhi7 BLOG</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.6.0/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"shanzhi7.github.io","root":"/","version":"1.8.10","typing":{"enable":true,"typeSpeed":70,"cursorChar":".","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}}};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>SHANZHI7</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/images/1.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Nginx_proxy_next_upstream引发的服务不可用">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-08-16 00:00" pubdate>
+        星期一, 八月 16日 2021, 12:00 凌晨
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      1.5k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      24
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Nginx_proxy_next_upstream引发的服务不可用</h1>
+            
+            <div class="markdown-body">
+              <h3 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h3><blockquote>
+<p>早上突然收到大量业务日志告警 都提示nacos不可用，检查完nacos 发现服务是正常的，通过nginx的日志和nacos的日志 确定是因为错误请求和nginx配置有关</p>
+</blockquote>
+<h3 id="错误请求"><a href="#错误请求" class="headerlink" title="错误请求"></a>错误请求</h3><ul>
+<li>nacos可以通过公网被访问到</li>
+<li>42.236.10.106 为360爬虫地址</li>
+<li>爬虫发起请求 GET /nacos/v1/cs/configs 因为缺少参数，导致nacos出现报错 返回500状态码</li>
+<li>而nginx的配置proxy_next_upstream 的配置 又将错误请求转发到下一个server上，导致所有server都返回过500，ng则认为server都挂了，触发no live upstreams while connecting to upstream （nginx错误日志中）</li>
+</ul>
+<p>nginx的错误重试配置：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-string">proxy_next_upstream</span> <span class="hljs-string">error</span> <span class="hljs-string">timeout</span> <span class="hljs-string">invalid_header</span> <span class="hljs-string">http_500</span> <span class="hljs-string">http_502</span> <span class="hljs-string">http_503</span> <span class="hljs-string">http_404;</span><br></code></pre></div></td></tr></table></figure>
+
+
+<p>nginx的请求日志如下</p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-number">42.236</span><span class="hljs-number">.10</span><span class="hljs-number">.106</span> <span class="hljs-string">–</span> <span class="hljs-bullet">-</span> [<span class="hljs-number">13</span><span class="hljs-string">/Aug/2021:19:08:08</span> <span class="hljs-string">+0800</span>] <span class="hljs-string">&quot;GET /nacos/v1/cs/configs HTTP/1.1&quot;</span> <span class="hljs-number">500</span> <span class="hljs-number">0.006</span> <span class="hljs-number">0.001</span><span class="hljs-string">,</span> <span class="hljs-number">0.002</span><span class="hljs-string">,</span> <span class="hljs-number">0.002</span> <span class="hljs-string">nacos.a.com</span> <span class="hljs-number">58</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;Mozilla/5.0 (Linux; U; Android 8.1.0; zh-CN; EML-AL00 Build/HUAWEIEML-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.108 baidu.sogo.uc.UCBrowser/11.9.4.974 UWS/2.13.1.48 Mobile Safari/537.36 AliApp(DingTalk/4.5.11) com.alibaba.android.rimet/10487439 Channel/227200 language/zh-CN&quot;</span> <span class="hljs-bullet">-</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;ip1:8848, ip2:8848, ip3:8848&quot;</span>  <br><span class="hljs-number">42.236</span><span class="hljs-number">.10</span><span class="hljs-number">.106</span> <span class="hljs-string">–</span> <span class="hljs-bullet">-</span> [<span class="hljs-number">13</span><span class="hljs-string">/Aug/2021:19:08:10</span> <span class="hljs-string">+0800</span>] <span class="hljs-string">&quot;GET /nacos/v1/cs/configs HTTP/1.1&quot;</span> <span class="hljs-number">500</span> <span class="hljs-number">0.006</span> <span class="hljs-number">0.002</span><span class="hljs-string">,</span> <span class="hljs-number">0.001</span><span class="hljs-string">,</span> <span class="hljs-number">0.002</span> <span class="hljs-string">nacos.a.com</span> <span class="hljs-number">58</span> <span class="hljs-string">&quot;http://baidu.com/&quot;</span> <span class="hljs-string">&quot;Mozilla/5.0 (Linux; U; Android 8.1.0; zh-CN; EML-AL00 Build/HUAWEIEML-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.108 baidu.sogo.uc.UCBrowser/11.9.4.974 UWS/2.13.1.48 Mobile Safari/537.36 AliApp(DingTalk/4.5.11) com.alibaba.android.rimet/10487439 Channel/227200 language/zh-CN&quot;</span> <span class="hljs-bullet">-</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;ip1:8848, ip2:8848, ip3:8848&quot;</span>   <br><span class="hljs-number">42.236</span><span class="hljs-number">.10</span><span class="hljs-number">.75</span> <span class="hljs-string">–</span> <span class="hljs-bullet">-</span> [<span class="hljs-number">13</span><span class="hljs-string">/Aug/2021:09:08:26</span> <span class="hljs-string">+0800</span>] <span class="hljs-string">&quot;GET /nacos/v1/cs/configs HTTP/1.1&quot;</span> <span class="hljs-number">500</span> <span class="hljs-number">0.009</span> <span class="hljs-number">0.002</span><span class="hljs-string">,</span> <span class="hljs-number">0.001</span><span class="hljs-string">,</span> <span class="hljs-number">0.006</span> <span class="hljs-string">nacos.a.com</span> <span class="hljs-number">58</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;Mozilla/5.0 (Linux; U; Android 8.1.0; zh-CN; EML-AL00 Build/HUAWEIEML-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.108 baidu.sogo.uc.UCBrowser/11.9.4.974 UWS/2.13.1.48 Mobile Safari/537.36 AliApp(DingTalk/4.5.11) com.alibaba.android.rimet/10487439 Channel/227200 language/zh-CN&quot;</span> <span class="hljs-bullet">-</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;ip1:8848, ip2:8848, ip3:8848&quot;</span>   <br><span class="hljs-number">42.236</span><span class="hljs-number">.10</span><span class="hljs-number">.75</span> <span class="hljs-string">–</span> <span class="hljs-bullet">-</span> [<span class="hljs-number">13</span><span class="hljs-string">/Aug/2021:09:08:26</span> <span class="hljs-string">+0800</span>] <span class="hljs-string">&quot;GET /nacos/v1/cs/configs HTTP/1.1&quot;</span> <span class="hljs-number">502</span> <span class="hljs-number">0.001</span> <span class="hljs-number">0.001</span><span class="hljs-string">,</span> <span class="hljs-number">0.000</span> <span class="hljs-string">nacos.a.com</span> <span class="hljs-number">552</span> <span class="hljs-string">&quot;http://baidu.com/&quot;</span> <span class="hljs-string">&quot;Mozilla/5.0 (Linux; U; Android 8.1.0; zh-CN; EML-AL00 Build/HUAWEIEML-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/57.0.2987.108 baidu.sogo.uc.UCBrowser/11.9.4.974 UWS/2.13.1.48 Mobile Safari/537.36 AliApp(DingTalk/4.5.11) com.alibaba.android.rimet/10487439 Channel/227200 language/zh-CN&quot;</span> <span class="hljs-bullet">-</span> <span class="hljs-string">&quot;-&quot;</span> <span class="hljs-string">&quot;ip3:8848, nacos-portal&quot;</span><br></code></pre></div></td></tr></table></figure>
+<p>nacos日志</p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-attr">org.springframework.web.bind.MissingServletRequestParameterException:</span> <span class="hljs-string">Required</span> <span class="hljs-string">String</span> <span class="hljs-string">parameter</span> <span class="hljs-string">&#x27;dataId&#x27;</span> <span class="hljs-string">is</span> <span class="hljs-string">not</span> <span class="hljs-string">present</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.method.annotation.RequestParamMethodArgumentResolver.handleMissingValue(RequestParamMethodArgumentResolver.java:202)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.method.annotation.AbstractNamedValueMethodArgumentResolver.resolveArgument(AbstractNamedValueMethodArgumentResolver.java:113)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:126)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:166)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:134)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:102)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:895)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:800)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1038)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:942)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1005)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:897)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">javax.servlet.http.HttpServlet.service(HttpServlet.java:634)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:882)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">javax.servlet.http.HttpServlet.service(HttpServlet.java:741)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:96)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.boot.actuate.web.trace.servlet.HttpTraceFilter.doFilterInternal(HttpTraceFilter.java:90)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:107)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)</span><br>        <span class="hljs-string">at</span> <span class="hljs-string">com.alibaba.nacos.core.auth.AuthFilter.doFilter(AuthFilter.java:60)</span><br></code></pre></div></td></tr></table></figure>
+
+<h3 id="proxy-next-upstream配置-下列内容转自：https-www-cnblogs-com-cyleon-p-11023229-html"><a href="#proxy-next-upstream配置-下列内容转自：https-www-cnblogs-com-cyleon-p-11023229-html" class="headerlink" title="proxy_next_upstream配置 (下列内容转自：https://www.cnblogs.com/cyleon/p/11023229.html)"></a>proxy_next_upstream配置 (下列内容转自：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/cyleon/p/11023229.html">https://www.cnblogs.com/cyleon/p/11023229.html</a>)</h3><p>nginx作为反向代理服务器，后端RS有多台服务器，上层通过一定机制保证容错和负载均衡。</p>
+<p>nginx的重试机制就是容错的一种</p>
+<p>官方链接：<a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_next_upstream">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_next_upstream</a></p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-string">proxy_next_upstream</span> <span class="hljs-string">error</span> <span class="hljs-string">|</span> <span class="hljs-string">timeout</span> <span class="hljs-string">|</span> <span class="hljs-string">invalid_header</span> <span class="hljs-string">|</span> <span class="hljs-string">http_500</span> <span class="hljs-string">|</span> <span class="hljs-string">http_502</span> <span class="hljs-string">|</span> <span class="hljs-string">http_503</span> <span class="hljs-string">|</span> <span class="hljs-string">http_504</span> <span class="hljs-string">|</span> <span class="hljs-string">http_403</span> <span class="hljs-string">|</span> <span class="hljs-string">http_404</span> <span class="hljs-string">|</span> <span class="hljs-string">http_429</span> <span class="hljs-string">|</span> <span class="hljs-string">non_idempotent</span> <span class="hljs-string">|</span> <span class="hljs-string">off</span> <span class="hljs-string">...;</span><br><span class="hljs-attr">Default:</span>    <span class="hljs-string">proxy_next_upstream</span> <span class="hljs-string">error</span> <span class="hljs-string">timeout;</span><br><span class="hljs-attr">Context:</span>    <span class="hljs-string">http,</span> <span class="hljs-string">server,</span> <span class="hljs-string">location</span><br><br><span class="hljs-string">指定应将请求传递到下一个服务器的情况：</span><br><span class="hljs-string">error</span>             <span class="hljs-comment"># 与服务器建立连接，向其传递请求或读取响应头时发生错误;</span><br><span class="hljs-string">timeout</span>           <span class="hljs-comment"># 在与服务器建立连接，向其传递请求或读取响应头时发生超时;</span><br><span class="hljs-string">invalid_header</span>    <span class="hljs-comment"># 服务器返回空的或无效的响应;</span><br><span class="hljs-string">http_500</span>          <span class="hljs-comment"># 服务器返回代码为500的响应;</span><br><span class="hljs-string">http_502</span>          <span class="hljs-comment"># 服务器返回代码为502的响应;</span><br><span class="hljs-string">http_503</span>          <span class="hljs-comment"># 服务器返回代码为503的响应;</span><br><span class="hljs-string">http_504</span>          <span class="hljs-comment"># 服务器返回代码504的响应;</span><br><span class="hljs-string">http_403</span>          <span class="hljs-comment"># 服务器返回代码为403的响应;</span><br><span class="hljs-string">http_404</span>          <span class="hljs-comment"># 服务器返回代码为404的响应;</span><br><span class="hljs-string">http_429</span>          <span class="hljs-comment"># 服务器返回代码为429的响应（1.11.13）;</span><br><span class="hljs-string">non_idempotent</span>    <span class="hljs-comment"># 通常，请求与 非幂等 方法（POST，LOCK，PATCH）不传递到请求是否已被发送到上游服务器（1.9.13）的下一个服务器; 启用此选项显式允许重试此类请求;</span><br><span class="hljs-string">off</span>               <span class="hljs-comment"># 禁用将请求传递给下一个服务器。</span><br></code></pre></div></td></tr></table></figure>
+
+<p>下面还有一个参数影响重试次数，0表示不限制。：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-attr">Syntax:</span>     <span class="hljs-string">proxy_next_upstream_tries</span> <span class="hljs-string">number;</span><br><span class="hljs-attr">Default:</span>    <span class="hljs-string">proxy_next_upstream_tries</span> <span class="hljs-number">0</span><span class="hljs-string">;</span><br><span class="hljs-attr">Context:</span>    <span class="hljs-string">http,</span> <span class="hljs-string">server,</span> <span class="hljs-string">location</span><br></code></pre></div></td></tr></table></figure>
+<p>例子：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter hljs"><div class="hljs code-wrapper"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></div></td><td class="code"><div class="hljs code-wrapper"><pre><code class="hljs yaml"><span class="hljs-string">upstream</span> <span class="hljs-string">app-proxy</span> &#123;<br>    <span class="hljs-string">server</span> <span class="hljs-number">192.168</span><span class="hljs-number">.5</span><span class="hljs-number">.100</span><span class="hljs-string">:8080;</span><br>    <span class="hljs-string">server</span> <span class="hljs-number">192.168</span><span class="hljs-number">.5</span><span class="hljs-number">.101</span><span class="hljs-string">:8080;</span><br>    <span class="hljs-string">check</span> <span class="hljs-string">interval=2000</span> <span class="hljs-string">rise=1</span> <span class="hljs-string">fall=3</span> <span class="hljs-string">timeout=3000</span> <span class="hljs-string">type=http;</span><br>    <span class="hljs-string">check_keepalive_requests</span> <span class="hljs-number">1</span><span class="hljs-string">;</span><br><span class="hljs-comment">#    check_http_send &quot;HEAD /status/status.html HTTP/1.1\r\n\r\n&quot;; </span><br>    <span class="hljs-string">check_http_send</span> <span class="hljs-string">&quot;GET /status/status.html HTTP/1.1\r\nConnection: close\r\nHost: localhost\r\n\r\n&quot;</span><span class="hljs-string">;</span> <br>    <span class="hljs-string">check_http_expect_alive</span> <span class="hljs-string">http_2xx</span> <span class="hljs-string">http_3xx;</span><br>&#125;<br><br><span class="hljs-string">location</span> <span class="hljs-string">/</span> &#123;<br>      <span class="hljs-string">proxy_pass</span>         <span class="hljs-string">http://app-proxy;</span><br>      <span class="hljs-string">proxy_next_upstream</span> <span class="hljs-string">error</span> <span class="hljs-string">timeout</span> <span class="hljs-string">http_500</span> <span class="hljs-string">http_502</span> <span class="hljs-string">http_503</span> <span class="hljs-string">http_504;</span><br>      <span class="hljs-string">proxy_next_upstream_tries</span> <span class="hljs-number">3</span><span class="hljs-string">;</span><br>      <span class="hljs-string">proxy_connect_timeout</span> <span class="hljs-string">60s;</span><br>      <span class="hljs-string">proxy_read_timeout</span> <span class="hljs-string">60s;</span><br>      <span class="hljs-string">proxy_send_timeout</span> <span class="hljs-string">60s;</span><br>      <span class="hljs-string">proxy_pass_request_headers</span>      <span class="hljs-string">on;</span><br>      <span class="hljs-string">proxy_set_header</span>   <span class="hljs-string">Host</span>             <span class="hljs-string">$host:$server_port;</span><br>      <span class="hljs-string">proxy_set_header</span>   <span class="hljs-string">X-Real-IP</span>        <span class="hljs-string">$remote_addr;</span><br>      <span class="hljs-string">proxy_set_header</span>   <span class="hljs-string">X-Forwarded-For</span>  <span class="hljs-string">$proxy_add_x_forwarded_for;</span><br>      <span class="hljs-string">set</span> <span class="hljs-string">$domain</span> <span class="hljs-string">default;</span><br></code></pre></div></td></tr></table></figure>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Nginx/">Nginx</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Nginx/">Nginx</a>
+                    
+                      <a class="hover-with-bg" href="/tags/QA/">QA</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/07/30/auditBeat/">
+                        <span class="hidden-mobile">AuditBeat-审计</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- 不蒜子统计PV -->
+        <span id="busuanzi_container_site_pv" style="display: none">
+            总访问量 
+            <span id="busuanzi_value_site_pv"></span>
+             次
+          </span>
+      
+      
+        <!-- 不蒜子统计UV -->
+        <span id="busuanzi_container_site_uv" style="display: none">
+            总访客数 
+            <span id="busuanzi_value_site_uv"></span>
+             人
+          </span>
+      
+    
+  </div>
+
+
+  
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.2/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.0/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    (function () {
+      var path = "/local-search.xml";
+      $('#local-search-input').on('click', function() {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      });
+      $('#modalSearch').on('shown.bs.modal', function() {
+        $('#local-search-input').focus();
+      });
+    })()
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+</body>
+</html>
